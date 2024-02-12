@@ -15,7 +15,7 @@ const Navbar = () => {
       } p-4 rounded-lg shadow-lg`}
     >
       <h1
-        className={`dark:text-slate-600 text-white font-bold text-2xl tracking-[16px]`}
+        className={`dark:text-slate-600 cursor-pointer text-white font-bold text-2xl tracking-[16px] dark:hover:text-pink-400 hover:text-blue-500 transitionA`}
       >
         TODO
       </h1>

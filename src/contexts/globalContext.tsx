@@ -41,7 +41,12 @@ const reducer = (state: TypeinitailState, action: Action) => {
         (task) => task.active === true
       );
       return { ...state, completedTasks: [], tasks: updatedTasks2 };
-
+    case "DELETETASK":
+      // eslint-disable-next-line no-case-declarations
+      const updatedTasks3: Task[] = state.tasks.filter(
+        (task) => task.id !== action.payload.id
+      );
+      return { ...state, tasks: updatedTasks3 };
     default:
       return state;
   }

@@ -31,7 +31,11 @@ const Task = () => {
         className="bg-slate-600 text-white dark:bg-white dark:text-slate-600  w-[90%]"
       />
       <button onClick={handleAddTask}>
-        <Icon icon="gg:add" width={32} />
+        <Icon
+          icon="gg:add"
+          width={32}
+          className="dark:hover:text-pink-400 hover:text-blue-500 transitionA"
+        />
       </button>
     </div>
   );

@@ -4,7 +4,8 @@ export type Action =
   | { type: "CHANGETHEME"; payload: string }
   | { type: "ADDTASK"; payload: Task }
   | { type: "COMPLETEDTASK"; payload: Task }
-  | { type: "CLEARCOMPLETED" };
+  | { type: "CLEARCOMPLETED" }
+  | { type: "DELETETASK"; payload: Task };
 
 export type ProviderProps = {
   children: ReactNode;

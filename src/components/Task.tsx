@@ -20,11 +20,13 @@ const Task = () => {
         text: textTask,
       };
       dispatch({ type: "ADDTASK", payload: temp });
+      setTextTask("");
     }
   };
   return (
     <div className="w-full flex justify-between items-center rounded-lg overflow-hidden mt-8 bg-slate-600 text-white dark:bg-white dark:text-slate-600 p-4">
       <input
+        value={textTask}
         onChange={(e) => setTextTask(e.target.value)}
         placeholder="Create a new todo..."
         type="text"

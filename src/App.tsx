@@ -1,18 +1,22 @@
 import "./App.css";
-
-import Main from "./components/Main";
-import { GContext } from "./contexts/globalContext";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import Login from "./components/Login";
+import Signup from "./components/Signup";
+import Home from "./components/Home";
+import AuthPage from "./components/AuthPage";
+import { useGContext } from "./contexts/globalContext";
 function App() {
+  const { authState } = useGContext();
+
   return (
-    <GContext>
-      <div className="w-full overflow-hidden font-Josefin">
-        <div className="w-full sm:bg-heroBackDeskLight dark:sm:bg-heroBackDeskDark dark:bg-heroBackMobDark bg-heroBackMobLight bg-contain bg-no-repeat bg-top dark:bg-dark bg-white  min-h-[100vh] flex justify-center items-center">
-          <div className="w-full sm:max-w-[700px] max-w-[400px]">
-            <Main />
-          </div>
-        </div>
-      </div>
-    </GContext>
+    <Router>
+      <Routes>
+        <Route index path={"/"} element={authState ? <Home /> : <AuthPage />} />
+        <Route path={"/home"} element={<Home />} />
+        <Route path={"/signup"} element={<Signup />} />
+        <Route path="/login" element={<Login />} />
+      </Routes>
+    </Router>
   );
 }
 

@@ -1,93 +1,128 @@
-import { createContext, useReducer, useContext, useEffect } from "react";
+import {
+  createContext,
+  useReducer,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import {
   TypeinitailState,
   TypeValue,
   Action,
   ProviderProps,
-  type Task,
+  Task,
+  User,
 } from "./types";
 import { rootElement } from "../constants/theme";
-
-const initailState: TypeinitailState = {
-  theme: localStorage.getItem("theme") ? localStorage.getItem("theme") : "dark",
-  completedTasks: [],
-  tasks: [],
-};
+import httpClient from "../utils/httpClient";
 
 const globalContext = createContext<TypeValue | undefined>(undefined);
 
-const reducer = (state: TypeinitailState, action: Action) => {
-  switch (action.type) {
-    case "CHANGETHEME":
-      return { ...state, theme: action.payload };
-    case "ADDTASK":
-      return { ...state, tasks: [...state.tasks, action.payload] };
-    case "COMPLETEDTASK":
-      // eslint-disable-next-line no-case-declarations
-      const updatedTasks: Task[] = state.tasks.map((task) => {
-        if (task.id === action.payload.id) {
-          return { ...task, active: false, complete: true };
-        }
-        return task;
-      });
-      return {
-        ...state,
-        completedTasks: [...state.completedTasks, action.payload],
-        tasks: updatedTasks,
-      };
-    case "CLEARCOMPLETED":
-      // eslint-disable-next-line no-case-declarations
-      const updatedTasks2: Task[] = state.tasks.filter(
-        (task) => task.active === true
-      );
-      return { ...state, completedTasks: [], tasks: updatedTasks2 };
-    case "DELETETASK":
-      // eslint-disable-next-line no-case-declarations
-      const updatedTasks3: Task[] = state.tasks.filter(
-        (task) => task.id !== action.payload.id
-      );
-      return { ...state, tasks: updatedTasks3 };
-    default:
-      return state;
-  }
-};
-
 const GContext: React.FC<ProviderProps> = ({ children }) => {
-  const [{ theme, tasks, completedTasks }, dispatch] = useReducer(
-    reducer,
-    initailState
-  );
-  console.log(tasks);
-  useEffect(() => {
-    switch (theme) {
-      case "dark":
-        rootElement.classList.add("dark");
-        localStorage.setItem("theme", "dark");
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [stateChange, setStateChange] = useState("");
+  const [user, setUser] = useState<User | null>(null);
+  const [authState, setAuthState] = useState<boolean>(false);
+  const [mode, setMode] = useState<string>("all");
 
-        break;
-      case "light":
-        rootElement.classList.remove("dark");
-        localStorage.setItem("theme", "light");
-        break;
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const response = await httpClient.get("/api/@me");
+        if (response.status === 200) {
+          setUser(response.data);
+          JSON.stringify(localStorage.setItem("authState", "true"));
+          setAuthState(true);
+        }
+      } catch (e) {
+        console.log("Not authenticated");
+      }
+    };
+    loadUser();
+  }, []);
+
+  useEffect(() => {
+    let url = "";
+
+    if (mode === "all") {
+      url = "/api";
+    } else if (mode === "actived") {
+      url = "/api/active";
+    } else {
+      url = "/api/complete";
+    }
+
+    const fetchTasks = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(url, { method: "GET" });
+        if (!response.ok) throw new Error(`Server error: ${response.status}`);
+        const data = await response.json();
+        localStorage.setItem("tasks", JSON.stringify(data.tasks));
+        console.log(data, "block");
+        setTasks(data.tasks);
+      } catch (e) {
+        console.error("Error fetching tasks:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTasks();
+  }, [stateChange, mode]);
+
+  const initialState: TypeinitailState = {
+    theme: localStorage.getItem("theme") ?? "dark",
+    tasks: tasks ?? [],
+  };
+
+  const reducer = (
+    state: TypeinitailState,
+    action: Action
+  ): TypeinitailState => {
+    switch (action.type) {
+      case "CHANGETHEME":
+        return { ...state, theme: action.payload };
       default:
-        return;
+        return state;
+    }
+  };
+
+  const [{ theme }, dispatch] = useReducer(reducer, initialState);
+
+  useEffect(() => {
+    if (theme === "dark") {
+      rootElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      rootElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
     }
   }, [theme]);
 
   const values: TypeValue = {
     theme,
     dispatch,
-    tasks,
-    completedTasks,
+    tasks: tasks,
+    completedTasks: [],
+    setStateChange,
+    setMode,
+    mode,
+    loading,
+    authState,
+    user,
   };
+
   return (
     <globalContext.Provider value={values}>{children}</globalContext.Provider>
   );
 };
+
 const useGContext: () => TypeValue = () => {
   const context = useContext(globalContext);
   if (!context) {
-    throw new Error("Error");
+    throw new Error("Global context is missing");
   }
   return context;
 };

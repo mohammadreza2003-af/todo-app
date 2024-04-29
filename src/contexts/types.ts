@@ -1,4 +1,4 @@
-import { type ReactNode, Dispatch } from "react";
+import { type ReactNode, Dispatch, SetStateAction } from "react";
 
 export type Action =
   | { type: "CHANGETHEME"; payload: string }
@@ -16,17 +16,29 @@ export type TypeValue = {
   theme: string | null;
   tasks: Task[];
   completedTasks: Task[];
+  setStateChange: Dispatch<SetStateAction<string>>;
+  setMode: Dispatch<SetStateAction<string>>;
+  mode: string;
+  loading: boolean;
+  authState: boolean;
+  user: User | null;
 };
 
 export type Task = {
-  text: string;
-  active: boolean;
+  task: string;
+  actived: boolean;
   id: string;
-  complete: boolean;
+  completed: boolean;
+  created_at: string;
+  updated_at: string;
 };
 
 export type TypeinitailState = {
   theme: string | null;
   tasks: Task[];
-  completedTasks: Task[];
+};
+
+export type User = {
+  email: string;
+  id: string;
 };

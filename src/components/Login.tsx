@@ -1,13 +1,17 @@
 import { useState } from "react";
 import httpClient from "../utils/httpClient";
 import { useNavigate } from "react-router-dom";
+import useToken from "../hooks/useToken";
+import { useGContext } from "../contexts/globalContext";
+import { generateUniqueId } from "../utils/helper";
 
 function Login() {
   const navigate = useNavigate();
-
+  const { setToken } = useToken();
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
 
+  const { setStateChange } = useGContext();
   const loginUser = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
 
@@ -19,8 +23,17 @@ function Login() {
       if (response.status !== 200) {
         throw new Error(response.data.message);
       }
+      setToken(response.data.access_token);
+      localStorage.setItem(
+        "userInfo",
+        JSON.stringify({
+          username: response.data.username,
+          email: response.data.email,
+          id: response.data.id,
+        })
+      );
       navigate("/home");
-      console.log(response.data);
+      setStateChange(generateUniqueId());
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
       console.log("Not authenticated");
@@ -69,9 +82,12 @@ function Login() {
         </form>
         <p className="mt-4 text-center">
           Don't have an account?{" "}
-          <a href="/signup" className="text-blue-500 hover:underline">
+          <button
+            onClick={() => navigate("/signup")}
+            className="text-blue-500 hover:underline"
+          >
             Sign up
-          </a>
+          </button>
         </p>
       </div>
     </div>

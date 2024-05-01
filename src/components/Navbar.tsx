@@ -3,21 +3,22 @@ import { options } from "../constants/theme";
 import { useGContext } from "../contexts/globalContext";
 import httpClient from "../utils/httpClient";
 import { useNavigate } from "react-router-dom";
+import useToken from "../hooks/useToken";
 
 const Navbar = () => {
-  const { theme, dispatch, user } = useGContext();
+  const { theme, dispatch, userInfo } = useGContext();
   const navigate = useNavigate();
-
+  const { removeToken } = useToken();
   const handleChangeTheme = (text: string) => {
     dispatch({ type: "CHANGETHEME", payload: text });
   };
   const logout = async () => {
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const response = await httpClient.post("/api/logout");
-      console.log(response.status);
-      JSON.stringify(localStorage.setItem("authState", "flase"));
-
-      navigate("/login");
+      removeToken();
+      navigate("/");
+      navigate(0);
     } catch (e) {
       console.log("Error logout");
     }
@@ -33,7 +34,7 @@ const Navbar = () => {
         <h1
           className={`dark:text-slate-600 cursor-pointer text-white font-bold text-xl dark:hover:text-pink-400 hover:text-blue-500 transitionA`}
         >
-          {user?.email}
+          {userInfo?.username}
         </h1>
         <div className="flex items-center justify-center gap-x-4">
           <button

@@ -20,8 +20,7 @@ export type TypeValue = {
   setMode: Dispatch<SetStateAction<string>>;
   mode: string;
   loading: boolean;
-  authState: boolean;
-  user: User | null;
+  userInfo: User | null;
 };
 
 export type Task = {
@@ -41,4 +40,5 @@ export type TypeinitailState = {
 export type User = {
   email: string;
   id: string;
+  username: string;
 };

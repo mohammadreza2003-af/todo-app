@@ -4,7 +4,7 @@ import { type Task } from "../contexts/types";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { generateUniqueId } from "../utils/helper";
 const Task = () => {
-  const { dispatch, setStateChange } = useGContext();
+  const { dispatch, setStateChange, userInfo } = useGContext();
   const [textTask, setTextTask] = useState<string>("");
 
   const handleSubmitTask = async (e: { preventDefault: () => void }) => {
@@ -16,6 +16,7 @@ const Task = () => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        id: userInfo?.id,
         task: textTask,
         isCompleted: false,
         isActived: true,

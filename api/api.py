@@ -1,16 +1,15 @@
-from flask import jsonify ,request ,abort ,session
+import json
+from flask import jsonify ,request 
 from config import app, db ,bcrypt
 from models import Task, User
+from datetime import datetime, timedelta, timezone
+from flask_jwt_extended import create_access_token ,unset_jwt_cookies,get_jwt,get_jwt_identity,jwt_required
 
 
-
-
-
-
-@app.route("/api" , methods=["GET"])
+@app.route("/api" , methods=["GET","POST"])
 def index():
-    
-    tasks = Task.query.all()
+    user_id = request.json.get("user_id")
+    tasks = Task.query.filter_by(user_id=user_id).all()
     json_task = list(map(lambda x: x.to_json(), tasks))
     return jsonify({"tasks": json_task}) , 201
 
@@ -25,10 +24,11 @@ def create_task():
     task_description = data.get("task")  
     is_completed = data.get("isCompleted", False)
     is_actived = data.get("isActived", True)
+    task_id=data.get("id")
     
     if not task_description:
         return jsonify({"message": "Task description is required"}), 400
-    new_task = Task(task=task_description, completed=is_completed , actived = is_actived)
+    new_task = Task(task=task_description, completed=is_completed , actived = is_actived, user_id=task_id)
     try:
         db.session.add(new_task)
         db.session.commit()
@@ -103,21 +103,22 @@ def complete():
 
 # Authetication
 
-@app.route("/api/@me")
-def get_current_user():
-    user_id = session.get("user_id")
+# @app.route("/api/@me")
+# def get_current_user():
+#     user_id = session.get("user_id")
     
-    if not user_id:
-       return jsonify({"message" : "Unauthorized"}) ,401
+#     if not user_id:
+#        return jsonify({"message" : "Unauthorized"}) ,401
 
-    user = User.query.filter_by(id=user_id).first()
-    return jsonify({"id" : user.id,"email" : user.email})
+#     user = User.query.filter_by(id=user_id).first()
+#     return jsonify({"id" : user.id,"email" : user.email})
 
 
 
 @app.route("/api/register" , methods=["POST"])
 def register():
     try:
+        username = request.json.get("username")
         email = request.json.get("email")
         password = request.json.get("password")
 
@@ -127,13 +128,13 @@ def register():
             return jsonify({"message" : "User already exists"}) , 409
 
         hashed_password = bcrypt.generate_password_hash(password)
-        new_user = User(email=email , password=hashed_password)
-        
+        new_user = User(email=email , password=hashed_password ,username = username)
+        access_token = create_access_token(identity=email)
         db.session.add(new_user)
         db.session.commit()
-        session["user_id"] = new_user.id
         
-        return jsonify({"id" : new_user.id,"email" : new_user.email})
+                
+        return jsonify({"id" : new_user.id,"email" : new_user.email , "username" : new_user.username , "access_token" :access_token})
     except Exception as e:
         return jsonify({"message" : e})
     
@@ -150,15 +151,16 @@ def login():
     if not bcrypt.check_password_hash(user.password,password):
         return jsonify({"message" : "Unauthorized"}) ,401
         
-    session["user_id"] = user.id
-    
-    return jsonify({"id" : user.id,"email" : user.email})
+    access_token = create_access_token(identity=email)
+
+    return jsonify({"id" : user.id,"email" : user.email , "username" : user.username , "access_token" :access_token})
 
 
 @app.route("/api/logout",methods=["POST"])
 def logout():
-    session.pop("user_id")
-    return jsonify({"message" : "Logout successfully"})
+    response = jsonify({"message" : "Logout successfully"}) 
+    unset_jwt_cookies(response)
+    return response
 
 if __name__ == "__main__":
     with app.app_context():

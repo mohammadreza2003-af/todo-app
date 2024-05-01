@@ -1,12 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import httpClient from "../utils/httpClient";
+import useToken from "../hooks/useToken";
 
 function Signup() {
   const navigate = useNavigate();
 
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [username, setUsername] = useState<string>("");
+
+  const { setToken } = useToken();
 
   const signupUser = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
@@ -15,12 +19,21 @@ function Signup() {
       const response = await httpClient.post("/api/register", {
         email,
         password,
+        username,
       });
       if (response.status !== 200) {
         throw new Error(response.data.message);
       }
       navigate("/home");
-      console.log(response.data);
+      setToken(response.data.access_token);
+      localStorage.setItem(
+        "userInfo",
+        JSON.stringify({
+          username: response.data.username,
+          email: response.data.email,
+          id: response.data.id,
+        })
+      );
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
       console.log("Not authenticated");
@@ -34,6 +47,19 @@ function Signup() {
           Sign Up
         </h2>
         <form onSubmit={signupUser}>
+          <div className="mb-4">
+            <label htmlFor="username" className="block text-gray-700 mb-2">
+              Username
+            </label>
+            <input
+              type="text"
+              id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full p-2 border rounded-lg"
+              placeholder="Enter your username"
+            />
+          </div>
           <div className="mb-4">
             <label htmlFor="email" className="block text-gray-700 mb-2">
               Email
@@ -69,9 +95,12 @@ function Signup() {
         </form>
         <p className="mt-4 text-center">
           Already have an account?{" "}
-          <a href="/login" className="text-blue-500 hover:underline">
+          <button
+            onClick={() => navigate("/login")}
+            className="text-blue-500 hover:underline"
+          >
             Login
-          </a>
+          </button>
         </p>
       </div>
     </div>

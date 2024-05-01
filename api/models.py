@@ -7,6 +7,7 @@ class Task(db.Model):
     task = db.Column(db.String(255), nullable=False)  # Set max length and non-null constraint
     completed = db.Column(db.Boolean, default=False)  # Default value for Boolean
     actived = db.Column(db.Boolean, default=True)  # Default value for Boolean
+    user_id = db.Column(db.String(255), nullable=False)  # Set max length and non-null constraint
     created_at = db.Column(db.DateTime, default=datetime.utcnow)  # Timestamp for creation
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)  # Update timestamp
     
@@ -16,6 +17,7 @@ class Task(db.Model):
             "task" : self.task,
             "completed" : self.completed,
             "actived" : self.actived,
+            "user_id" : self.user_id,
             "created_at" : self.created_at,
             "updated_at" : self.updated_at
         }
@@ -28,4 +30,5 @@ class User(db.Model):
     id = db.Column(db.String(32), primary_key = True,unique = True,default = get_uuid)
     email = db.Column(db.String(345),unique = True,nullable = False)
     password = db.Column(db.Text,nullable = False)
+    username= db.Column(db.String(345),unique = True,nullable = False)
         

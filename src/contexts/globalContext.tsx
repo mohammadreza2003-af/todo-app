@@ -14,7 +14,6 @@ import {
   User,
 } from "./types";
 import { rootElement } from "../constants/theme";
-import httpClient from "../utils/httpClient";
 
 const globalContext = createContext<TypeValue | undefined>(undefined);
 
@@ -22,25 +21,38 @@ const GContext: React.FC<ProviderProps> = ({ children }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [stateChange, setStateChange] = useState("");
-  const [user, setUser] = useState<User | null>(null);
-  const [authState, setAuthState] = useState<boolean>(false);
   const [mode, setMode] = useState<string>("all");
+  const [userInfo, setUserInfo] = useState<User | null>(() => {
+    const storedUserInfo = localStorage.getItem("userInfo");
+    return storedUserInfo && JSON.parse(storedUserInfo || "");
+  });
+
+  // useEffect(() => {
+  //   const loadUser = async () => {
+  //     try {
+  //       const response = await httpClient.get("/api/@me");
+  //       if (response.status === 200) {
+  //         JSON.stringify(localStorage.setItem("authState", "true"));
+  //         setAuthState(true);
+  //       }
+  //     } catch (e) {
+  //       console.log("Not authenticated");
+  //     }
+  //   };
+  //   loadUser();
+  // }, []);
+
+  const setInfo = () => {
+    const storedUserInfo = localStorage.getItem("userInfo");
+    if (storedUserInfo) {
+      const parsedUserInfo = JSON.parse(storedUserInfo || "");
+      setUserInfo(parsedUserInfo);
+    }
+  };
 
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const response = await httpClient.get("/api/@me");
-        if (response.status === 200) {
-          setUser(response.data);
-          JSON.stringify(localStorage.setItem("authState", "true"));
-          setAuthState(true);
-        }
-      } catch (e) {
-        console.log("Not authenticated");
-      }
-    };
-    loadUser();
-  }, []);
+    setInfo();
+  }, [stateChange]);
 
   useEffect(() => {
     let url = "";
@@ -56,11 +68,18 @@ const GContext: React.FC<ProviderProps> = ({ children }) => {
     const fetchTasks = async () => {
       setLoading(true);
       try {
-        const response = await fetch(url, { method: "GET" });
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            user_id: userInfo?.id,
+          }),
+        });
         if (!response.ok) throw new Error(`Server error: ${response.status}`);
         const data = await response.json();
         localStorage.setItem("tasks", JSON.stringify(data.tasks));
-        console.log(data, "block");
         setTasks(data.tasks);
       } catch (e) {
         console.error("Error fetching tasks:", e);
@@ -70,7 +89,7 @@ const GContext: React.FC<ProviderProps> = ({ children }) => {
     };
 
     fetchTasks();
-  }, [stateChange, mode]);
+  }, [userInfo, mode]);
 
   const initialState: TypeinitailState = {
     theme: localStorage.getItem("theme") ?? "dark",
@@ -110,8 +129,7 @@ const GContext: React.FC<ProviderProps> = ({ children }) => {
     setMode,
     mode,
     loading,
-    authState,
-    user,
+    userInfo,
   };
 
   return (

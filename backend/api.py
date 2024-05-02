@@ -1,9 +1,11 @@
 import json
 from flask import jsonify ,request 
-from config import app, db ,bcrypt
+from config import app, db ,bcrypt,port
 from models import Task, User
 from datetime import datetime, timedelta, timezone
 from flask_jwt_extended import create_access_token ,unset_jwt_cookies,get_jwt,get_jwt_identity,jwt_required
+
+
 
 
 @app.route("/api" , methods=["GET","POST"])
@@ -179,5 +181,5 @@ if __name__ == "__main__":
         db.create_all()
         # db.drop_all()
         
-    app.run(debug=True)
+    app.run(debug=True,host="0.0.0.0",port=port)
     

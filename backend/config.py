@@ -8,7 +8,7 @@ from datetime import timedelta
 import os
 
 app = Flask(__name__)
-
+port = int(os.getenv("PORT", 4000))
 bcrypt = Bcrypt(app)
 CORS(app)
 jwt = JWTManager(app)

@@ -21,6 +21,7 @@ export type TypeValue = {
   mode: string;
   loading: boolean;
   userInfo: User | null;
+  httpUrl: string;
 };
 
 export type Task = {

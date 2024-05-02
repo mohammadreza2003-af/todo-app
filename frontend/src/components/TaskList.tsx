@@ -2,46 +2,65 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { useGContext } from "../contexts/globalContext";
 import { type Task } from "../contexts/types";
 import { generateUniqueId } from "../utils/helper";
+import { PopupMessageSuccess } from "../utils/toasts";
+import useToken from "../hooks/useToken";
 
 const TaskList = () => {
-  const { tasks, setStateChange, setMode, mode, loading } = useGContext();
-
+  const { tasks, setStateChange, setMode, mode, loading, httpUrl } =
+    useGContext();
+  const { token } = useToken();
   const handleCompletedTask: (item: Task) => void = async (item) => {
     const options = {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(item),
     };
     try {
-      const response = await fetch(`/api/actived/${item.id}`, options);
+      const response = await fetch(
+        `${httpUrl}/api/actived/${item.id}`,
+        options
+      );
       if (!response.ok) throw new Error("Problem in server.");
       setStateChange(generateUniqueId());
+      PopupMessageSuccess("The Task was completed");
     } catch (e) {
+      PopupMessageSuccess("Something went wrong please try again");
       console.error(e);
     }
   };
   const handleClearCompleted = async () => {
     try {
-      const response = await fetch("/api/clear_all", {
+      const response = await fetch(`${httpUrl}/api/clear_all`, {
         method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
       if (!response.ok) throw new Error("Problem in server.");
+      PopupMessageSuccess("All tasks cleared");
       setStateChange(generateUniqueId());
     } catch (e) {
+      PopupMessageSuccess("Something went wrong please try again");
       console.error(e);
     }
   };
 
   const handleDeletetTask = async (task: Task) => {
     try {
-      const response = await fetch(`/api/delete_task/${task.id}`, {
+      const response = await fetch(`${httpUrl}/api/delete_task/${task.id}`, {
         method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
       if (!response.ok) throw new Error("Problem in server.");
       setStateChange(generateUniqueId());
+      PopupMessageSuccess("The task was deleted");
     } catch (e) {
+      PopupMessageSuccess("The task was not deleted");
       console.error(e);
     }
   };
@@ -57,44 +76,49 @@ const TaskList = () => {
   }
 
   return (
-    <div className="w-full bg-slate-600 rounded-lg overflow-hidden flex flex-col gap-y-4 p-4 mt-8 dark:bg-white shadow-lg">
-      {tasks.length > 0 && (
-        <div>
-          <ul>
-            {tasks.map((item) => (
-              <div key={item.id}>
-                <li className="w-full relative flex justify-start items-center rounded-lg overflow-hidden mt-8 shadow-md bg-slate-600 text-white dark:bg-white dark:text-slate-600 p-4 border-b-2 border-slate-300">
-                  <button
-                    onClick={() => handleCompletedTask(item)}
-                    className="mr-4"
-                  >
-                    {item.actived ? (
-                      <Icon
-                        icon="mdi:tick-circle-outline"
-                        className="dark:hover:text-pink-400 hover:text-blue-500 transitionA"
-                        width={32}
-                      />
-                    ) : (
-                      <Icon
-                        icon="mdi:tick-circle"
-                        className="dark:hover:text-pink-400 hover:text-blue-500 transitionA"
-                        width={32}
-                      />
-                    )}
-                  </button>
-                  <h2 className={`${item.actived ? "" : "line-through"}`}>
-                    {item.task}
-                  </h2>
-                  <Icon
-                    icon="typcn:delete-outline"
-                    width={36}
-                    onClick={() => handleDeletetTask(item)}
-                    className="absolute top-4 right-4 cursor-pointer dark:hover:text-pink-400 hover:text-blue-500 transitionA"
-                  />
-                </li>
-              </div>
-            ))}
-            {/* {mode === "active" &&
+    <>
+      <div
+        className={`w-full bg-slate-600 rounded-t-lg ${
+          tasks.length > 0 ? "overflow-y-scroll" : "overflow-hidden"
+        } max-h-[300px] flex flex-col gap-y-4 p-4 mt-8 dark:bg-white shadow-lg`}
+      >
+        {tasks.length > 0 && (
+          <div>
+            <ul>
+              {tasks.map((item) => (
+                <div key={item.id}>
+                  <li className="w-full relative flex justify-start items-center rounded-lg overflow-hidden mt-8 shadow-md bg-slate-600 text-white dark:bg-white dark:text-slate-600 p-4 border-b-2 border-slate-300">
+                    <button
+                      onClick={() => handleCompletedTask(item)}
+                      className="mr-4"
+                    >
+                      {item.actived ? (
+                        <Icon
+                          icon="mdi:tick-circle-outline"
+                          className="dark:hover:text-pink-400 hover:text-blue-500 transitionA"
+                          width={32}
+                        />
+                      ) : (
+                        <Icon
+                          icon="mdi:tick-circle"
+                          className="dark:hover:text-pink-400 hover:text-blue-500 transitionA"
+                          width={32}
+                        />
+                      )}
+                    </button>
+                    <h2 className={`${item.actived ? "" : "line-through"}`}>
+                      {item.task}
+                    </h2>
+                    <Icon
+                      icon="typcn:delete-outline"
+                      width={36}
+                      onClick={() => handleDeletetTask(item)}
+                      className="absolute top-4 right-4 cursor-pointer dark:hover:text-pink-400 hover:text-blue-500 transitionA"
+                    />
+                  </li>
+                </div>
+              ))}
+              {/* {mode === "active" &&
               tasks.map((item) => (
                 <>
                   {item.actived === true && (
@@ -162,10 +186,11 @@ const TaskList = () => {
                   </li>
                 </>
               ))} */}
-          </ul>
-        </div>
-      )}
-      <div>
+            </ul>
+          </div>
+        )}
+      </div>
+      <div className="w-full bg-slate-600 rounded-b-lg flex flex-col gap-y-4 p-4 dark:bg-white shadow-lg">
         <div className="flex items-center justify-between">
           <span className="text-lg font-medium sm:block hidden dark:text-slate-500 text-white">
             {tasks.reduce((acc) => {
@@ -223,7 +248,7 @@ const TaskList = () => {
           items left
         </span>
       </div>
-    </div>
+    </>
   );
 };
 

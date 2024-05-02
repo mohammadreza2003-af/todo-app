@@ -1,28 +1,33 @@
 import { useState } from "react";
-import httpClient from "../utils/httpClient";
 import { useNavigate } from "react-router-dom";
+import httpClient from "../utils/httpClient";
 import useToken from "../hooks/useToken";
 import { useGContext } from "../contexts/globalContext";
 import { generateUniqueId } from "../utils/helper";
+import { PopupMessageFailed, PopupMessageSuccess } from "../utils/toasts";
 
-function Login() {
+function Signup() {
   const navigate = useNavigate();
-  const { setToken } = useToken();
+
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [username, setUsername] = useState<string>("");
 
+  const { setToken } = useToken();
   const { setStateChange } = useGContext();
-  const loginUser = async (e: { preventDefault: () => void }) => {
+  const signupUser = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
 
     try {
-      const response = await httpClient.post("/api/login", {
+      const response = await httpClient.post("/api/register", {
         email,
         password,
+        username,
       });
       if (response.status !== 200) {
         throw new Error(response.data.message);
       }
+      navigate("/home");
       setToken(response.data.access_token);
       localStorage.setItem(
         "userInfo",
@@ -32,10 +37,11 @@ function Login() {
           id: response.data.id,
         })
       );
-      navigate("/home");
+      PopupMessageSuccess("The registration was successful");
       setStateChange(generateUniqueId());
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (e: any) {
+      PopupMessageFailed("Not authenticated");
       console.log("Not authenticated");
     }
   };
@@ -44,9 +50,22 @@ function Login() {
     <div className="flex h-screen justify-center items-center bg-gray-100">
       <div className="w-full max-w-sm bg-white p-8 rounded-lg shadow-md">
         <h2 className="text-2xl font-bold mb-6 text-pink-400 dark:text-blue-500">
-          Login
+          Sign Up
         </h2>
-        <form onSubmit={loginUser}>
+        <form onSubmit={signupUser}>
+          <div className="mb-4">
+            <label htmlFor="username" className="block text-gray-700 mb-2">
+              Username
+            </label>
+            <input
+              type="text"
+              id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full p-2 border rounded-lg"
+              placeholder="Enter your username"
+            />
+          </div>
           <div className="mb-4">
             <label htmlFor="email" className="block text-gray-700 mb-2">
               Email
@@ -77,16 +96,16 @@ function Login() {
             type="submit"
             className="w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600"
           >
-            Login
+            Sign Up
           </button>
         </form>
         <p className="mt-4 text-center">
-          Don't have an account?{" "}
+          Already have an account?{" "}
           <button
-            onClick={() => navigate("/signup")}
+            onClick={() => navigate("/login")}
             className="text-blue-500 hover:underline"
           >
-            Sign up
+            Login
           </button>
         </p>
       </div>
@@ -94,4 +113,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default Signup;

@@ -7,14 +7,16 @@ from flask_jwt_extended import create_access_token ,unset_jwt_cookies,get_jwt,ge
 
 
 @app.route("/api" , methods=["GET","POST"])
+@jwt_required()
+
 def index():
     user_id = request.json.get("user_id")
     tasks = Task.query.filter_by(user_id=user_id).all()
     json_task = list(map(lambda x: x.to_json(), tasks))
     return jsonify({"tasks": json_task}) , 201
 
-
 @app.route("/api/create_task", methods=["POST"])
+@jwt_required()
 def create_task():
     data = request.get_json() 
     
@@ -38,6 +40,7 @@ def create_task():
     return jsonify({"message": "Task created successfully", "task": {"id": new_task.id, "task": new_task.task, "completed": new_task.completed}}), 201
 
 @app.route("/api/delete_task/<int:task_id>" , methods=["DELETE"])
+@jwt_required()
 def delete_task(task_id):
     task = Task.query.get(task_id)
     
@@ -52,6 +55,7 @@ def delete_task(task_id):
         return jsonify({"message" : e})
 
 @app.route("/api/clear_all", methods=["DELETE"])
+@jwt_required()
 def clear_all():
    try:
         db.session.query(Task).delete()  
@@ -61,8 +65,8 @@ def clear_all():
         db.session.rollback()  
         return jsonify({"error": str(e)}), 500  
 
-
 @app.route("/api/actived/<int:id>", methods=["PATCH"])
+@jwt_required()
 def actived(id):
     item = Task.query.get(id)
     if not item:
@@ -77,22 +81,22 @@ def actived(id):
         db.session.rollback() 
         return jsonify({"error": str(e)}), 500   
 
-
-@app.route("/api/active",methods=["GET"])
+@app.route("/api/active",methods=["GET","POST"])
+@jwt_required()
 def active():
-    
-    acitve_tasks = Task.query.filter_by(actived=True).all()
+    user_id = request.json.get("user_id")
+    acitve_tasks = Task.query.filter_by(actived=True,user_id=user_id).all()
     if len([acitve_tasks]) == 0 :
         return jsonify({"message": "not found"}), 404
     
     json_task = list(map(lambda x: x.to_json(), acitve_tasks))
     return jsonify({"tasks" : json_task}) , 201
 
-
-@app.route("/api/complete",methods=["GET"])
+@app.route("/api/complete",methods=["GET","POST"])
+@jwt_required()
 def complete():
-    
-    completed_tasks = Task.query.filter_by(actived=False).all()
+    user_id = request.json.get("user_id")
+    completed_tasks = Task.query.filter_by(actived=False,user_id=user_id).all()
     if len([completed_tasks]) == 0 :
         return jsonify({"tasks": "not found"}), 
     
@@ -102,17 +106,6 @@ def complete():
 
 
 # Authetication
-
-# @app.route("/api/@me")
-# def get_current_user():
-#     user_id = session.get("user_id")
-    
-#     if not user_id:
-#        return jsonify({"message" : "Unauthorized"}) ,401
-
-#     user = User.query.filter_by(id=user_id).first()
-#     return jsonify({"id" : user.id,"email" : user.email})
-
 
 
 @app.route("/api/register" , methods=["POST"])
@@ -137,7 +130,7 @@ def register():
         return jsonify({"id" : new_user.id,"email" : new_user.email , "username" : new_user.username , "access_token" :access_token})
     except Exception as e:
         return jsonify({"message" : e})
-    
+
 @app.route("/api/login" ,methods=["POST"])
 def login():
     email = request.json.get("email")
@@ -161,6 +154,25 @@ def logout():
     response = jsonify({"message" : "Logout successfully"}) 
     unset_jwt_cookies(response)
     return response
+
+
+@app.after_request
+def refresh_expiring_jwts(response):
+    try:
+        exp_timestamp = get_jwt()["exp"]
+        now = datetime.now(timezone.utc)
+        target_timestamp = datetime.timestamp(now + timedelta(minutes=30))
+        if target_timestamp > exp_timestamp:
+            access_token = create_access_token(identity=get_jwt_identity())
+            data = response.get_json()
+            if type(data) is dict:
+                data["access_token"] = access_token 
+                response.data = json.dumps(data)
+        return response
+    except (RuntimeError, KeyError):
+        return response
+
+
 
 if __name__ == "__main__":
     with app.app_context():

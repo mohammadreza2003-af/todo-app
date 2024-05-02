@@ -3,9 +3,13 @@ import { useGContext } from "../contexts/globalContext";
 import { type Task } from "../contexts/types";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { generateUniqueId } from "../utils/helper";
+import { PopupMessageFailed, PopupMessageSuccess } from "../utils/toasts";
+import useToken from "../hooks/useToken";
 const Task = () => {
-  const { dispatch, setStateChange, userInfo } = useGContext();
+  const { dispatch, setStateChange, userInfo, httpUrl } = useGContext();
   const [textTask, setTextTask] = useState<string>("");
+
+  const { token } = useToken();
 
   const handleSubmitTask = async (e: { preventDefault: () => void }) => {
     e.preventDefault();
@@ -14,6 +18,7 @@ const Task = () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         id: userInfo?.id,
@@ -23,13 +28,16 @@ const Task = () => {
       }),
     };
 
-    const response = await fetch("/api/create_task", options);
+    const response = await fetch(`${httpUrl}/api/create_task`, options);
 
     if (response.status !== 201 && response.status !== 200) {
       const errorData = await response.json();
+      PopupMessageFailed("The task was not added");
+
       alert(errorData.message);
     } else {
       setStateChange(`${generateUniqueId()}`);
+      PopupMessageSuccess("Added task.");
     }
 
     if (textTask.length > 0) {

@@ -14,6 +14,7 @@ import {
   User,
 } from "./types";
 import { rootElement } from "../constants/theme";
+import useToken from "../hooks/useToken";
 
 const globalContext = createContext<TypeValue | undefined>(undefined);
 
@@ -27,20 +28,7 @@ const GContext: React.FC<ProviderProps> = ({ children }) => {
     return storedUserInfo && JSON.parse(storedUserInfo || "");
   });
 
-  // useEffect(() => {
-  //   const loadUser = async () => {
-  //     try {
-  //       const response = await httpClient.get("/api/@me");
-  //       if (response.status === 200) {
-  //         JSON.stringify(localStorage.setItem("authState", "true"));
-  //         setAuthState(true);
-  //       }
-  //     } catch (e) {
-  //       console.log("Not authenticated");
-  //     }
-  //   };
-  //   loadUser();
-  // }, []);
+  const { token } = useToken();
 
   const setInfo = () => {
     const storedUserInfo = localStorage.getItem("userInfo");
@@ -49,6 +37,7 @@ const GContext: React.FC<ProviderProps> = ({ children }) => {
       setUserInfo(parsedUserInfo);
     }
   };
+  const httpUrl = import.meta.env.VITE_APP_SERVER;
 
   useEffect(() => {
     setInfo();
@@ -58,11 +47,11 @@ const GContext: React.FC<ProviderProps> = ({ children }) => {
     let url = "";
 
     if (mode === "all") {
-      url = "/api";
+      url = `${httpUrl}/api`;
     } else if (mode === "actived") {
-      url = "/api/active";
+      url = `${httpUrl}/api/active`;
     } else {
-      url = "/api/complete";
+      url = `${httpUrl}/api/complete`;
     }
 
     const fetchTasks = async () => {
@@ -72,6 +61,7 @@ const GContext: React.FC<ProviderProps> = ({ children }) => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
             user_id: userInfo?.id,
@@ -130,6 +120,7 @@ const GContext: React.FC<ProviderProps> = ({ children }) => {
     mode,
     loading,
     userInfo,
+    httpUrl,
   };
 
   return (
